@@ -1,0 +1,16 @@
+identifier: bms_8s50_ic
+name: BMS-8S50-IC
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 64
+flash: 256
+supported:
+  - nvs
+  - can
+  - rtc
+  - counter
+  - spi

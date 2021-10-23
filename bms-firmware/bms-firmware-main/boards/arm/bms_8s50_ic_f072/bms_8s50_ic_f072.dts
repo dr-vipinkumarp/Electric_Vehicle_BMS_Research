@@ -1,0 +1,152 @@
+/*
+ * Copyright (c) The Libre Solar Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * This is the legacy version v0.1 of the board which could be used with STM32F0 instead of STM32L0.
+ * Future revisions of this BMS will use the STM32L4 MCU.
+ */
+
+/dts-v1/;
+#include <st/f0/stm32f072Xb.dtsi>
+#include <st/f0/stm32f072c(8-b)tx-pinctrl.dtsi>
+
+/ {
+	model = "Libre Solar BMS 8S50 IC";
+	compatible = "st,stm32f072";
+
+	pcb {
+		compatible = "bms";
+
+		type = "BMS 8S50 IC";
+		version-str = "v0.1";
+		version-num = <1>;
+
+		num-cells-max = <8>;
+		num-thermistors-max = <2>;
+
+		current-max = <50>;
+		shunt-res = <1000>;
+
+		/*
+		 * Additional information:
+		 * - Has MOSFET temperature sensor
+		 * - PIN_V_EXT     PA_5
+		 * - PIN_TEMP_1    PA_6
+		 * - PIN_TEMP_2    PA_7
+		 */
+	};
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+		led1: led_0 {
+			gpios = <&gpiob 14 GPIO_ACTIVE_HIGH>;
+			label = "LED 1";
+		};
+		led2: led_1 {
+			gpios = <&gpiob 15 GPIO_ACTIVE_HIGH>;
+			label = "LED 2";
+		};
+	};
+
+	switches {
+		compatible = "switch";
+		i2c_pullup {
+			gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
+			label = "I2C Pull-Up";
+		};
+		can_en {
+			gpios = <&gpioc 13 GPIO_ACTIVE_LOW>;
+			label = "CAN transceiver enable";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		power_button: button {
+			label = "Power Button";
+			gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
+		};
+	};
+
+	aliases {
+		led-red = &led1;
+		led-green = &led2;
+		sw-pwr = &power_button;
+		i2c-uext = &i2c1;
+		uart-dbg = &usart1;
+	};
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pa2 &usart2_rx_pa3>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
+	status = "okay";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_pb10 &i2c2_sda_pb11>;
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	status = "okay";
+
+	isl94202@28 {
+		compatible = "renesas,isl94202";
+		label = "ISL94202";
+		reg = <0x28>;	/* 0x50 >> 1 */
+	};
+
+	eeprom@50 {
+		// Microchip 24AA32A
+		compatible = "atmel,at24";
+		reg = <0x50>;
+		label = "EEPROM_0";
+		size = <32768>;
+		pagesize = <32>;
+		address-width = <16>;
+		/*
+		 * timeout of 5 ms as suggested in datasheet seems too optimistic
+		 * (several write errors occured during testing)
+		 */
+		timeout = <7>;
+	};
+};
+
+&spi1 {
+	pinctrl-0 = <&spi1_sck_pb3 &spi1_miso_pb4 &spi1_mosi_pb5>;
+	cs-gpios = <&gpioa 15 GPIO_ACTIVE_LOW>;
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};
+
+&adc1 {
+	status = "okay";
+};
+
+&can1 {
+	pinctrl-0 = <&can_rx_pb8 &can_tx_pb9>;
+	bus-speed = <250000>;
+	status = "okay";
+};

@@ -1,0 +1,165 @@
+# Copyright (c) The Libre Solar Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Libre Solar Battery Management System Firmware"
+
+#
+# Invisible (board-specific) Kconfig symbols
+#
+
+config BMS_BQ76920
+    bool
+    help
+      Texas Instruments bq76920 used as BMS IC
+
+config BMS_BQ76930
+    bool
+    help
+      Texas Instruments bq76930 used as BMS IC
+
+config BMS_BQ76940
+    bool
+    help
+      Texas Instruments bq76940 used as BMS IC
+
+config BMS_ISL94202
+    bool
+    help
+      Intersil ISL94202 used as BMS IC
+
+config LIBRE_SOLAR_TYPE_ID
+    int
+    help
+      Numeric Libre Solar hardware type ID
+
+#
+# Visible (user-configurable) Kconfig symbols
+#
+
+menu "Battery default settings"
+
+config BAT_CAPACITY_AH
+    int "Battery nominal capacity in Ah"
+    range 10 1000
+    default 50
+    help
+      Nominal battery capacity or sum of parallel cells capacity
+
+choice
+    prompt "Cell type"
+    default CELL_TYPE_LFP
+    help
+      Select the type of the single cells inside the battery
+      to determine voltage set points. Total voltage set points
+      are multiplied with the selected number of cells.
+
+    config CELL_TYPE_LFP
+        bool "LiFePO4, 3.3V nominal"
+
+    config CELL_TYPE_NMC
+        bool "NMC/Graphite, 3.7V nominal, 4.2V max"
+
+    config CELL_TYPE_NMC_HV
+        bool "NMC/Graphite High Voltage, 3.7V nominal, 4.35 max"
+
+    config CELL_TYPE_LTO
+        bool "NMC/Titanate, 2.4 V nominal"
+endchoice
+
+# values must match enum CellType in bms.h
+config CELL_TYPE
+    int
+    default 0 if CELL_TYPE_CUSTOM
+    default 1 if CELL_TYPE_LFP
+    default 2 if CELL_TYPE_NMC
+    default 3 if CELL_TYPE_NMC_HV
+    default 4 if CELL_TYPE_LTO
+
+config NUM_CELLS_IN_SERIES
+    int "Number of cells for single battery"
+    default 3 if CELL_TYPE_NMC || CELL_TYPE_NMC_HV
+    default 4 if CELL_TYPE_LFP
+    default 5 if CELL_TYPE_LTO
+    range 3 16
+    help
+      Typical choices:
+      - 3 for 12V NMC Li-Ion battery
+      - 4 for 12V LiFePO4 battery
+      - 5 for 12V Titanate battery
+
+endmenu
+
+
+menu "UEXT port"
+
+config UEXT_OLED_DISPLAY
+    select I2C
+    bool "OLED display"
+
+config UEXT_OLED_BRIGHTNESS
+    depends on UEXT_OLED_DISPLAY
+    int "OLED display brightness"
+    range 1 255
+    default 1
+
+config UEXT_SERIAL_THINGSET
+    depends on THINGSET_SERIAL
+    bool "Use UEXT serial for ThingSet interface"
+    default y
+    help
+      If the ThingSet interface is not attached to the serial port in the UEXT connector, the
+      serial in the LS.one port or the debug connector is used (if existing).
+
+endmenu # UEXT port
+
+menu "ThingSet interfaces"
+
+config THINGSET_SERIAL
+    bool "ThingSet serial interface"
+
+config THINGSET_SERIAL_RX_BUF_SIZE
+    depends on THINGSET_SERIAL
+    int "ThingSet serial RX buffer size"
+    range 64 2048
+    default 512
+
+config THINGSET_SERIAL_TX_BUF_SIZE
+    depends on THINGSET_SERIAL
+    int "ThingSet serial TX buffer size"
+    range 256 2048
+    default 1024
+
+config THINGSET_SERIAL_PUB_DEFAULT
+    bool "Enable serial publication messages at startup"
+    depends on THINGSET_SERIAL
+    default y
+
+config THINGSET_CAN
+    depends on CAN
+    bool "ThingSet CAN interface"
+
+config THINGSET_CAN_PUB_DEFAULT
+    bool "Enable CAN publication messages at startup"
+    depends on THINGSET_CAN
+    default y
+
+config THINGSET_CAN_DEFAULT_NODE_ID
+    depends on THINGSET_CAN
+    int "ThingSet CAN default node ID"
+    range 0 255
+    default 10
+
+config THINGSET_EXPERT_PASSWORD
+    depends on THINGSET_SERIAL || THINGSET_CAN
+    string "ThingSet expert user password"
+    default "expert123"
+
+config THINGSET_MAKER_PASSWORD
+    depends on THINGSET_SERIAL || THINGSET_CAN
+    string "ThingSet maker password"
+    default "maker456"
+
+endmenu # ThingSet interface
+
+# include main Zephyr menu entries from Zephyr root directory
+source "Kconfig.zephyr"

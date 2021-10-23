@@ -1,0 +1,12 @@
+.pio
+.clang_complete
+.gcc-flags.json
+.vscode/browse.vc.db*
+.vscode
+.west
+html
+memory.map
+custom.ini
+tools
+*.bak
+*_bak
